@@ -1,23 +1,19 @@
 package com.jh.strawberry.service;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.jh.strawberry.dto.AirHumidity;
@@ -46,9 +42,13 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 
+import cmcc.iot.onenet.javasdk.api.datapoints.GetDatapointsListApi;
 import cmcc.iot.onenet.javasdk.api.datastreams.FindDatastreamListApi;
 import cmcc.iot.onenet.javasdk.api.device.GetDeviceApi;
 import cmcc.iot.onenet.javasdk.response.BasicResponse;
+import cmcc.iot.onenet.javasdk.response.datapoints.DatapointsList;
+import cmcc.iot.onenet.javasdk.response.datapoints.DatapointsList.DatastreamsItem;
+import cmcc.iot.onenet.javasdk.response.datapoints.DatapointsList.DatastreamsItem.DatapointsItem;
 import cmcc.iot.onenet.javasdk.response.datastreams.DatastreamsResponse;
 import cmcc.iot.onenet.javasdk.response.device.DeviceResponse;
 
@@ -82,6 +82,8 @@ public class DeviceService {
 		
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static SimpleDateFormat sdfd = new SimpleDateFormat("HH:mm");
+	private static SimpleDateFormat sdf_update_0 = new SimpleDateFormat("yyyy-MM-dd");
+	private static SimpleDateFormat sdf_update_1 = new SimpleDateFormat("HH:mm:ss");
 	
 	private static int data_points = 30;
 	
@@ -275,6 +277,101 @@ public class DeviceService {
 			logger.debug("失败原因："+response.error);
 		}		
 	}
+	
+	public void updateData(String id,Date start,Date end) throws ParseException {
+		String dataFormatStart = sdf_update_0.format(start)+"T"+sdf_update_1.format(start);
+		String dataFormatEnd  = sdf_update_0.format(end)+"T"+sdf_update_1.format(end);
+		GetDatapointsListApi api = new GetDatapointsListApi(null, dataFormatStart, dataFormatEnd, id, null, null, null, null,
+				null, null, null, api_key);
+		BasicResponse<DatapointsList> response = api.executeApi();
+		logger.debug("更新设备："+id + "的数据："+response.getJson());
+		Map<String, Object> map = null;
+		if(response.errno==0) {
+			List<DatastreamsItem> dl= response.getData().getDevices();
+			System.out.println("参数个数："+dl.size());		
+			System.out.println("总共获得数据量为："+response.getData().getCount());
+			for(int i=0;i<dl.size();i++) {				
+				DatastreamsItem di = dl.get(i);
+				List<DatapointsItem> ld =di.getDatapoints();
+				System.out.println(di.getId()+"参数下数据量："+ld.size());
+				switch (di.getId()) {
+				case Constants.AIRTEMPERATURE:			
+					//空气温度
+					for(int j=0;j<ld.size();j++) {
+						AirTemperature airTemperature = new AirTemperature();
+						airTemperature.setDeviceid(id);
+						airTemperature.setTime(sdf.parse(ld.get(j).getAt()));
+						airTemperature.setValue((double)ld.get(j).getValue());
+						airTemperatureRepository.save(airTemperature);
+					}
+					break;
+				case Constants.AIRHUMIDITY:
+					//空气湿度
+					for(int j=0;j<ld.size();j++) {
+						AirHumidity airHumidity = new AirHumidity();
+						airHumidity.setDeviceid(id);
+						airHumidity.setTime(sdf.parse(ld.get(j).getAt()));
+						airHumidity.setValue((double)ld.get(j).getValue());
+						airHumidityRepository.save(airHumidity);
+					}
+					break;
+				case Constants.ILLUMINANCE:
+					//光照强度
+					for(int j=0;j<ld.size();j++) {
+						Illuminance illuminance = new Illuminance();
+						illuminance.setDeviceid(id);
+						illuminance.setTime(sdf.parse(ld.get(j).getAt()));
+						illuminance.setValue((double)ld.get(j).getValue());
+						illuminanceRepository.save(illuminance);
+					}
+					break;
+				case Constants.CO2:
+					//二氧化碳浓度
+					for(int j=0;j<ld.size();j++) {
+						co2 co2 = new co2();
+						co2.setDeviceid(id);
+						co2.setTime(sdf.parse(ld.get(j).getAt()));
+						co2.setValue((double)ld.get(j).getValue());
+						co2Repository.save(co2);
+					}
+					break;
+				case Constants.SOILHUMIDITY:
+					//土壤湿度
+					for(int j=0;j<ld.size();j++) {
+						SoilHumidity soilHumidity = new SoilHumidity();
+						soilHumidity.setDeviceid(id);
+						soilHumidity.setTime(sdf.parse(ld.get(j).getAt()));
+						soilHumidity.setValue((double)ld.get(j).getValue());
+						soilHumidityRepository.save(soilHumidity);
+					}
+					break;
+				case Constants.SOILTEMPERATURE:
+					//土壤温度
+					for(int j=0;j<ld.size();j++) {
+						SoilTemperature soilTemperature = new SoilTemperature();
+						soilTemperature.setDeviceid(id);
+						soilTemperature.setTime(sdf.parse(ld.get(j).getAt()));
+						soilTemperature.setValue((double)ld.get(j).getValue());
+						soilTemperatureRepository.save(soilTemperature);
+					}
+					break;
+				case Constants.SOILPH:
+					//土壤酸碱值
+					for(int j=0;j<ld.size();j++) {
+						SoilPH soilPH = new SoilPH();
+						soilPH.setDeviceid(id);
+						soilPH.setTime(sdf.parse(ld.get(j).getAt()));
+						soilPH.setValue((double)ld.get(j).getValue());
+						soilPHRepository.save(soilPH);
+					}
+					break;
+				default:
+					break;
+				}				
+			}
+		}
+	}
+	
 	/**
 	 * 更新数据
 	 * @param id
