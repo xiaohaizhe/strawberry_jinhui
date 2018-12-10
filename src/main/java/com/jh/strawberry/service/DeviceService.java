@@ -1,18 +1,19 @@
 package com.jh.strawberry.service;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.config.RepositoryConfigurationDelegate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,11 @@ import com.jh.strawberry.repository.SoilPHRepository;
 import com.jh.strawberry.repository.SoilTemperatureRepository;
 import com.jh.strawberry.utils.Config;
 import com.jh.strawberry.utils.Constants;
+import com.jh.strawberry.utils.MongoDBUtils;
+import com.mongodb.BasicDBObject;
+import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
 
 import cmcc.iot.onenet.javasdk.api.datastreams.FindDatastreamListApi;
 import cmcc.iot.onenet.javasdk.api.device.GetDeviceApi;
@@ -75,6 +81,19 @@ public class DeviceService {
 	private static String api_key = Config.getString("api_key");
 		
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private static SimpleDateFormat sdfd = new SimpleDateFormat("HH:mm");
+	
+	private static int data_points = 30;
+	
+	private static MongoDBUtils mongoDBUtil = MongoDBUtils.getInstance();
+	private static MongoClient meiyaClient = mongoDBUtil.getMongoConnect("127.0.0.1",27017);
+	private static MongoCollection<Document> airHumidity = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","airHumidity");
+	private static MongoCollection<Document> airTemperature = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","airTemperature");
+	private static MongoCollection<Document> co2 = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","co2");
+	private static MongoCollection<Document> illuminance = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","illuminance");
+	private static MongoCollection<Document> soilHumidity = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilHumidity");
+	private static MongoCollection<Document> soilTemperature = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilTemperature");
+	private static MongoCollection<Document> soilPH = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilPH");
 	/**
 	 * 获取设备状态
 	 * @param id
@@ -96,27 +115,43 @@ public class DeviceService {
 		logger.debug("进入获取最新数据");
 		JSONObject object = new JSONObject();
 		Sort sort = new Sort("time");
-		List<AirHumidity> airHumidities = airHumidityRepository.findAll(sort);
-		object.put(Constants.AIRHUMIDITY, getLatestData(airHumidities));
-
-		List<AirTemperature> airTemperatures = airTemperatureRepository.findAll(sort);
-		object.put(Constants.AIRTEMPERATURE, getLatestData(airTemperatures));
-		
-		List<co2> co2s = co2Repository.findAll(sort);
-		object.put(Constants.CO2, getLatestData(co2s));
-		
-		List<Illuminance> illuminances = illuminanceRepository.findAll(sort);
-		object.put(Constants.ILLUMINANCE, getLatestData(illuminances));
-		
-		List<SoilHumidity> soilHumidities = soilHumidityRepository.findAll(sort);
-		object.put(Constants.SOILHUMIDITY, getLatestData(soilHumidities));
-		
-		List<SoilTemperature> soilTemperatures = soilTemperatureRepository.findAll(sort);
-		object.put(Constants.SOILTEMPERATURE, getLatestData(soilTemperatures));
-		
-		List<SoilPH> soilPHs = soilPHRepository.findAll(sort);
-		object.put(Constants.SOILPH, getLatestData(soilPHs));
-		
+		BasicDBObject query = new BasicDBObject();
+        query.put("deviceid",id);
+        //空气湿度
+		FindIterable<Document> documents1 = airHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents1) {
+			object.put(Constants.AIRHUMIDITY, d.get("value"));
+		}
+		//空气温度
+		FindIterable<Document> documents2 = airTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents2) {
+			object.put(Constants.AIRTEMPERATURE, d.get("value"));
+		}
+		//二氧化碳浓度
+		FindIterable<Document> documents3 = co2.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents3) {
+			object.put(Constants.CO2, d.get("value"));
+		}
+		//光照强度
+		FindIterable<Document> documents4 = illuminance.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents4) {
+			object.put(Constants.ILLUMINANCE, d.get("value"));
+		}
+		//土壤湿度
+		FindIterable<Document> documents5 = soilHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents5) {
+			object.put(Constants.SOILHUMIDITY, d.get("value"));
+		}
+		//土壤温度
+		FindIterable<Document> documents6 = soilTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents6) {
+			object.put(Constants.SOILTEMPERATURE, d.get("value"));
+		}
+		//土壤酸碱值
+		FindIterable<Document> documents7 = soilPH.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
+		for (Document d : documents7) {
+			object.put(Constants.SOILPH, d.get("value"));
+		}
 		return RESCODE.SUCCESS.getJSONRES(object);
 	}
 	/**
@@ -135,51 +170,90 @@ public class DeviceService {
 		}		
 	}
 	
-	
+	/**
+	 * 图表数据点：取30个点
+	 * @param id
+	 * @param type
+	 * @return
+	 */
 	public JSONObject getDataInChart(String id,String type) {
-		JSONObject jsonObject = new JSONObject();
+		JSONArray data = new JSONArray();
+		JSONArray time = new JSONArray();
+		BasicDBObject query = new BasicDBObject();
+        query.put("deviceid",id);		
 		switch (type) {
 		case Constants.AIRTEMPERATURE:			
-			airTemperatureRepository.findById(id);
+			//空气温度
+			FindIterable<Document> documents2 = airTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents2) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));			
+			}
 			break;
 		case Constants.AIRHUMIDITY:
-			AirHumidity airHumidity = new AirHumidity();
-			airHumidity.setDeviceid(id);
-			airHumidityRepository.save(airHumidity);
+			//空气湿度
+			FindIterable<Document> documents1 = airHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents1) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));
+			}
 			break;
 		case Constants.ILLUMINANCE:
-			Illuminance illuminance = new Illuminance();
-			illuminance.setDeviceid(id);
-			illuminanceRepository.save(illuminance);
+			//光照强度
+			FindIterable<Document> documents4 = illuminance.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents4) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));
+			}
 			break;
 		case Constants.CO2:
-			co2 co2 = new co2();
-			co2.setDeviceid(id);
-			co2Repository.save(co2);
+			//二氧化碳浓度
+			FindIterable<Document> documents3 = co2.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents3) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));
+			}
 			break;
 		case Constants.SOILHUMIDITY:
-			SoilHumidity soilHumidity = new SoilHumidity();
-			soilHumidity.setDeviceid(id);
-			soilHumidityRepository.save(soilHumidity);
+			//土壤湿度
+			FindIterable<Document> documents5 = soilHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents5) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));
+			}
 			break;
 		case Constants.SOILTEMPERATURE:
-			SoilTemperature soilTemperature = new SoilTemperature();
-			soilTemperature.setDeviceid(id);
-			soilTemperatureRepository.save(soilTemperature);
+			//土壤温度
+			FindIterable<Document> documents6 = soilTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents6) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));
+			}
 			break;
 		case Constants.SOILPH:
-			SoilPH soilPH = new SoilPH();
-			soilPH.setDeviceid(id);
-			soilPHRepository.save(soilPH);
+			//土壤酸碱值
+			FindIterable<Document> documents7 = soilPH.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
+			for (Document d : documents7) {
+				Date date = d.getDate("time");
+				data.add(d.get("value"));
+				time.add(sdfd.format(date));
+			}
 			break;
 		default:
 			break;
 		
 		}
-		return jsonObject;
-	}
-	
-	
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("data", data);
+		jsonObject.put("time", time);
+		return RESCODE.SUCCESS.getJSONRES(jsonObject);
+	}	
 	/**
 	 * 更新设备状态
 	 * @param id

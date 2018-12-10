@@ -28,40 +28,13 @@ public class DeviceController {
 	@Autowired
 	private DeviceService deviceService;
 	
-	@Autowired
-	private DeviceRepository deviceRepository;
-
-	@RequestMapping("save")
-	public void save() {
-		Device device = new Device();
-		device.setId("504626770");
-		device.setOnline(true);
-		device.setTime(new Date());
-		deviceRepository.save(device);
-	}
-	
-	@RequestMapping("find")
-	public void getByDeviceSn(String id) {
-		Optional<Device> optional = deviceRepository.findById(id);
-		System.out.println(optional.isPresent());
-	}
-    
-    
-	@RequestMapping("status")
-	public void getDeviceStatus(String device_sn) {
-		deviceService.updateData(device_sn);
-	}
-	
 	@RequestMapping(value = "get_latest_data",method = RequestMethod.GET)
 	public JSONObject getLatestData(String id) {
 		return deviceService.getLatestData(id);
 	}
 	@RequestMapping(value = "get_data_in_chart",method = RequestMethod.GET)
 	public JSONObject getDataInChart(String id,String type) {
-		return null;
+		return deviceService.getDataInChart(id, type);
 	}
-	
-	
-
 }
 
