@@ -1,24 +1,16 @@
 package com.jh.strawberry.controller;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSONObject;
-import com.jh.strawberry.dto.Device;
 import com.jh.strawberry.repository.DeviceRepository;
 import com.jh.strawberry.service.DeviceService;
-
-import cmcc.iot.onenet.javasdk.response.BasicResponse;
 
 /**
  * @author pyt
@@ -29,6 +21,8 @@ import cmcc.iot.onenet.javasdk.response.BasicResponse;
 public class DeviceController {
 	@Autowired
 	private DeviceService deviceService;
+	@Autowired 
+	private DeviceRepository deviceRepository;
 	
 	@RequestMapping(value = "get_latest_data",method = RequestMethod.GET)
 	public JSONObject getLatestData(String id) {
@@ -37,6 +31,19 @@ public class DeviceController {
 	@RequestMapping(value = "get_data_in_chart",method = RequestMethod.GET)
 	public JSONObject getDataInChart(String id,String type) {
 		return deviceService.getDataInChart(id, type);
+	}
+	
+	@RequestMapping(value = "update",method = RequestMethod.GET)
+	public void update(String id) {
+		Date end = new Date();
+		Date start = new Date();
+		start.setDate(start.getDate()-3);
+		try {
+			deviceService.updateData(id, start, end);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
 

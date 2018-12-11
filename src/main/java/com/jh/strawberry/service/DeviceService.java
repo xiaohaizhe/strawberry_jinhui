@@ -179,6 +179,7 @@ public class DeviceService {
 	 * @return
 	 */
 	public JSONObject getDataInChart(String id,String type) {
+		logger.debug("进入获取图表数据");
 		JSONArray data = new JSONArray();
 		JSONArray time = new JSONArray();
 		BasicDBObject query = new BasicDBObject();
@@ -279,21 +280,23 @@ public class DeviceService {
 	}
 	
 	public void updateData(String id,Date start,Date end) throws ParseException {
+		logger.debug("开始更新数据");
 		String dataFormatStart = sdf_update_0.format(start)+"T"+sdf_update_1.format(start);
 		String dataFormatEnd  = sdf_update_0.format(end)+"T"+sdf_update_1.format(end);
+		logger.debug("开始时间："+dataFormatStart);
+		logger.debug("结束时间："+dataFormatEnd);
 		GetDatapointsListApi api = new GetDatapointsListApi(null, dataFormatStart, dataFormatEnd, id, null, null, null, null,
 				null, null, null, api_key);
 		BasicResponse<DatapointsList> response = api.executeApi();
-		logger.debug("更新设备："+id + "的数据："+response.getJson());
 		Map<String, Object> map = null;
 		if(response.errno==0) {
 			List<DatastreamsItem> dl= response.getData().getDevices();
-			System.out.println("参数个数："+dl.size());		
-			System.out.println("总共获得数据量为："+response.getData().getCount());
+			logger.debug("参数个数："+dl.size());		
+			logger.debug("总共获得数据量为："+response.getData().getCount());
 			for(int i=0;i<dl.size();i++) {				
 				DatastreamsItem di = dl.get(i);
 				List<DatapointsItem> ld =di.getDatapoints();
-				System.out.println(di.getId()+"参数下数据量："+ld.size());
+				logger.debug(di.getId()+"参数下数据量："+ld.size());
 				switch (di.getId()) {
 				case Constants.AIRTEMPERATURE:			
 					//空气温度
@@ -301,7 +304,7 @@ public class DeviceService {
 						AirTemperature airTemperature = new AirTemperature();
 						airTemperature.setDeviceid(id);
 						airTemperature.setTime(sdf.parse(ld.get(j).getAt()));
-						airTemperature.setValue((double)ld.get(j).getValue());
+						airTemperature.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						airTemperatureRepository.save(airTemperature);
 					}
 					break;
@@ -311,7 +314,7 @@ public class DeviceService {
 						AirHumidity airHumidity = new AirHumidity();
 						airHumidity.setDeviceid(id);
 						airHumidity.setTime(sdf.parse(ld.get(j).getAt()));
-						airHumidity.setValue((double)ld.get(j).getValue());
+						airHumidity.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						airHumidityRepository.save(airHumidity);
 					}
 					break;
@@ -321,7 +324,7 @@ public class DeviceService {
 						Illuminance illuminance = new Illuminance();
 						illuminance.setDeviceid(id);
 						illuminance.setTime(sdf.parse(ld.get(j).getAt()));
-						illuminance.setValue((double)ld.get(j).getValue());
+						illuminance.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						illuminanceRepository.save(illuminance);
 					}
 					break;
@@ -331,7 +334,7 @@ public class DeviceService {
 						co2 co2 = new co2();
 						co2.setDeviceid(id);
 						co2.setTime(sdf.parse(ld.get(j).getAt()));
-						co2.setValue((double)ld.get(j).getValue());
+						co2.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						co2Repository.save(co2);
 					}
 					break;
@@ -341,7 +344,7 @@ public class DeviceService {
 						SoilHumidity soilHumidity = new SoilHumidity();
 						soilHumidity.setDeviceid(id);
 						soilHumidity.setTime(sdf.parse(ld.get(j).getAt()));
-						soilHumidity.setValue((double)ld.get(j).getValue());
+						soilHumidity.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						soilHumidityRepository.save(soilHumidity);
 					}
 					break;
@@ -351,7 +354,7 @@ public class DeviceService {
 						SoilTemperature soilTemperature = new SoilTemperature();
 						soilTemperature.setDeviceid(id);
 						soilTemperature.setTime(sdf.parse(ld.get(j).getAt()));
-						soilTemperature.setValue((double)ld.get(j).getValue());
+						soilTemperature.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						soilTemperatureRepository.save(soilTemperature);
 					}
 					break;
@@ -361,7 +364,7 @@ public class DeviceService {
 						SoilPH soilPH = new SoilPH();
 						soilPH.setDeviceid(id);
 						soilPH.setTime(sdf.parse(ld.get(j).getAt()));
-						soilPH.setValue((double)ld.get(j).getValue());
+						soilPH.setValue(Double.parseDouble((String)ld.get(j).getValue()));
 						soilPHRepository.save(soilPH);
 					}
 					break;
@@ -369,6 +372,7 @@ public class DeviceService {
 					break;
 				}				
 			}
+			logger.debug("数据存储结束！");
 		}
 	}
 	
