@@ -2,6 +2,7 @@ package com.jh.strawberry.service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -252,11 +253,13 @@ public class DeviceService {
 			break;
 		
 		}
+		Collections.reverse(data);
+		Collections.reverse(time);
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("data", data);
 		jsonObject.put("time", time);
 		return RESCODE.SUCCESS.getJSONRES(jsonObject);
-	}	
+	}
 	/**
 	 * 更新设备状态
 	 * @param id

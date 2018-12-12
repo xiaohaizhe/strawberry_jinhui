@@ -32,7 +32,7 @@
 		</RollingFile>
 		<!-- org.hibernate连接日志输入，debug等级 -->
 		<RollingFile name="hibernate" fileName="C:/jh_strawberry/logs/jh_strawberry-sql.log"
-			filePattern="C:/cell_link/logs/cell_link-sql-%d{yyyy-MM-dd HH:mm}.log">
+			filePattern="C:/jh_strawberry/logs/jh_strawberry-sql-%d{yyyy-MM-dd HH:mm}.log">
 			<PatternLayout charset="UTF-8"
 				pattern="%d{yyyy-MM-dd HH:mm:ss} [%p]%c{1} - %m%n" />
 			<Append>true</Append>
