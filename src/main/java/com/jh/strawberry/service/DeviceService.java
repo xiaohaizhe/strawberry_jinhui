@@ -2,6 +2,7 @@ package com.jh.strawberry.service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -183,7 +184,9 @@ public class DeviceService {
 		JSONArray data = new JSONArray();
 		JSONArray time = new JSONArray();
 		BasicDBObject query = new BasicDBObject();
-        query.put("deviceid",id);		
+        query.put("deviceid",id);	
+        double value = 0;
+        int count = 0;
 		switch (type) {
 		case Constants.AIRTEMPERATURE:			
 			//空气温度
@@ -191,6 +194,8 @@ public class DeviceService {
 			for (Document d : documents2) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));			
 			}
 			break;
@@ -200,6 +205,8 @@ public class DeviceService {
 			for (Document d : documents1) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
@@ -209,6 +216,8 @@ public class DeviceService {
 			for (Document d : documents4) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
@@ -218,6 +227,8 @@ public class DeviceService {
 			for (Document d : documents3) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
@@ -227,6 +238,8 @@ public class DeviceService {
 			for (Document d : documents5) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
@@ -236,6 +249,8 @@ public class DeviceService {
 			for (Document d : documents6) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
@@ -245,6 +260,8 @@ public class DeviceService {
 			for (Document d : documents7) {
 				Date date = d.getDate("time");
 				data.add(d.get("value"));
+				value+=(double)d.get("value");
+				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
@@ -252,11 +269,18 @@ public class DeviceService {
 			break;
 		
 		}
+		Collections.reverse(data);
+		Collections.reverse(time);
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("data", data);
 		jsonObject.put("time", time);
+		if(count==0) {
+			jsonObject.put("mean", 0);
+		}else {
+			jsonObject.put("mean", (double)Math.round(value/count*100)/100);
+		}		
 		return RESCODE.SUCCESS.getJSONRES(jsonObject);
-	}	
+	}
 	/**
 	 * 更新设备状态
 	 * @param id
