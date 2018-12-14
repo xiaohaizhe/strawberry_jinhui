@@ -1,6 +1,8 @@
 <template>
   <div class="console">
 
+    <div class="title">金卉生态园智能温室</div>
+
     <div class="echarts-box">
       <img class="echarts-img" src="./../../static/left.png" alt="">
       <div class="echarts-window" id="box"></div>
@@ -271,6 +273,14 @@
 </script>
 
 <style scoped>
+  .title{
+    color: #ffffff;
+    font-size: 4.6vh;
+    position: fixed;
+    top: 2.7vh;
+    transform: translateX(-50%);
+    left: 50%;
+  }
   .console {
     height: 100vh;
     width: 100vw;
