@@ -74,6 +74,10 @@
     mounted() {
       this.getButtonData()
       this.getEchartsData('airTemperature')
+      setTimeout(() => {
+        this.getButtonData()
+      }, 120000)
+
     },
     methods: {
       // 点击切换按钮
@@ -136,9 +140,9 @@
               formatter: '{c}',
             },
             grid: {
-              left: '6%',   //图表距边框的距离
-              right: '7%',
-              bottom: '8%',
+              left: '8%',   //图表距边框的距离
+              right: '10%',
+              bottom: '10%',
               top: '20%',
               containLabel: true
             },
@@ -164,11 +168,11 @@
             },
             yAxis: {
               type: 'value',
-              name: '('+this.buttonData[this.checkedButton].unit+')',
-              nameGap:20,
-              nameTextStyle:{
+              name: '(' + this.buttonData[this.checkedButton].unit + ')',
+              nameGap: 20,
+              nameTextStyle: {
                 color: '#a5aabc',
-                left:30
+                left: 30
               },
               axisLabel: {
                 color: '#a5aabc',
@@ -212,10 +216,10 @@
                     label: {show: true, position: 'left', formatter: 'aaa'}
                   },
                   data: [
-                    { yAxis: 26,
+                    {
+                      yAxis: data.mean,
                       label: {
                         show: true,
-                        formatter: '26',
                         color: '#ff4242'
                       },
                       itemStyle: {
@@ -283,15 +287,15 @@
 
   .echarts-img {
     height: 31vh;
-    width: 21vw;
+    width: 10vw;
   }
 
   .echarts-window {
-    height: 49vh;
-    width: 51vw;
+    height: 55.56vh;
+    width: 57.8vw;
     background: url("./../../static/3.png");
-    overflow: auto;
     background-size: 100% 100%;
+    overflow: hidden;
   }
 
   .nav {
