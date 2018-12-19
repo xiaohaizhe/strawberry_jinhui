@@ -78,7 +78,7 @@
       this.getEchartsData('airTemperature')
       setTimeout(() => {
         this.getButtonData()
-      }, 120000)
+      }, 900000)
 
     },
     methods: {
