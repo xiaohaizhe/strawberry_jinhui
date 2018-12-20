@@ -39,8 +39,8 @@ import com.jh.strawberry.utils.Config;
 import com.jh.strawberry.utils.Constants;
 import com.jh.strawberry.utils.MongoDBUtils;
 import com.mongodb.BasicDBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 
 import cmcc.iot.onenet.javasdk.api.datapoints.GetDatapointsListApi;

@@ -12,10 +12,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
-import com.mongodb.MongoClient;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -74,33 +76,19 @@ public class MongoDBUtils {
             logger.error(PLEASE_SEND_IP);
             return null;
         }
- 
-        return new MongoClient(host, port);
+        MongoCredential credential = MongoCredential.createScramSha256Credential(user_name, "jh_strawberry", psd.toCharArray());
+        //MongoClient mongoClient = new MongoClient(new ServerAddress(host, port), Arrays.asList(credential));
+        MongoClient mongoClient =  MongoClients.create(
+                MongoClientSettings.builder()
+                        .applyToClusterSettings(builder ->
+                                builder.hosts(Arrays.asList(new ServerAddress(host, port))))
+                        .credential(credential)
+                        .build());
+        return mongoClient;
     }
  
  
-    /**
-     * 批量删除mongo库
-     * @param mongoClient
-     * @param dbNames
-     * @return
-     */
-    public String bulkDropDataBase(MongoClient mongoClient,String...dbNames){
  
-        if(null == mongoClient) return PLEASE_INSTANCE_MONGOCLIENT;
- 
-        if(null==dbNames || dbNames.length==0){
-            return PLEASE_SEND_MONGO_REPOSITORY;
-        }
-        try {
-            Arrays.asList(dbNames).forEach(dbName -> mongoClient.dropDatabase(dbName));
-            logger.info(DELETE_MONGO_REPOSITORY_SUCCESS);
-        }catch (Exception e){
-            e.printStackTrace();
-            logger.error(DELETE_MONGO_REPOSITORY_EXCEPTION);
-        }
-        return dbNames == null ? NOT_DELETE_MONGO_REPOSITORY:DELETE_MONGO_REPOSITORY + String.join(",",dbNames);
-    }
  
  
     /**
@@ -157,7 +145,7 @@ public class MongoDBUtils {
         return collectionDocuments;
     }
  
-    /**
+  /*  *//**
      * 获取到MongoClient
      * @param ip
      * @param port
@@ -165,7 +153,7 @@ public class MongoDBUtils {
      * @param dbName
      * @param psw
      * @returnMongoClient
-     */
+     *//*
     @SuppressWarnings("deprecation")
 	public static MongoClient getMongoClientByCredential(String ip,int port,String userName,String dbName,String psw){
         ServerAddress serverAddress = new ServerAddress(ip,port);
@@ -180,18 +168,8 @@ public class MongoDBUtils {
         //通过连接认证获取MongoDB连接
         MongoClient mongoClient = new MongoClient(addrs,credentials);
         return mongoClient;
-    }
-    /**
-     *  获取到MongoClient
-     * @param ip
-     * @param port
-     * @return
-     */
-    public static MongoClient getMongoClient(String ip,int port) {
-    	MongoClient mongoClient = new MongoClient(ip,port);
-    	return mongoClient;
-    }
- 
+    }*/
+
     /**
      * 插入文档数据
      * @param mongoCollection
