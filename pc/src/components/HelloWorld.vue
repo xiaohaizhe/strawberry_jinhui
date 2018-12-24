@@ -47,7 +47,7 @@
           {
             title: 'CO₂',
             data: 0,
-            unit: '%'
+            unit: 'ppm'
           },
           {
             title: '光照强度',
