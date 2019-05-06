@@ -1,7 +1,6 @@
 package com.jh.strawberry.dto;
 
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
+import com.alibaba.fastjson.annotation.JSONField;
 import java.util.Date;
 
 /**
@@ -10,10 +9,10 @@ import java.util.Date;
  */
 public class BaseDto{
 	private double value;
+	@JSONField(format="yyyy-MM-dd HH:mm:ss")
 	private Date time;
 	private String deviceid;
-	
-	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 	public double getValue() {
 		return value;
 	}
@@ -32,10 +31,14 @@ public class BaseDto{
 	public void setDeviceid(String deviceid) {
 		this.deviceid = deviceid;
 	}
+
 	@Override
 	public String toString() {
-		return "[value=" + value + ", time=" + sdf.format(time) + ", deviceid=" + deviceid + "]";
+		return "BaseDto{" +
+				"value=" + value +
+				", time=" + time +
+				", deviceid='" + deviceid + '\'' +
+				'}';
 	}
-	
 }
 

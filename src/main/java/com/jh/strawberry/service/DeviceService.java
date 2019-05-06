@@ -11,6 +11,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,7 +91,7 @@ public class DeviceService {
 	
 	private static int data_points = 30;
 	
-	private static MongoDBUtils mongoDBUtil = MongoDBUtils.getInstance();
+	/*private static MongoDBUtils mongoDBUtil = MongoDBUtils.getInstance();
 	private static MongoClient meiyaClient = mongoDBUtil.getMongoConnect("127.0.0.1",27017);
 	private static MongoCollection<Document> airHumidity = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","airHumidity");
 	private static MongoCollection<Document> airTemperature = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","airTemperature");
@@ -96,7 +99,7 @@ public class DeviceService {
 	private static MongoCollection<Document> illuminance = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","illuminance");
 	private static MongoCollection<Document> soilHumidity = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilHumidity");
 	private static MongoCollection<Document> soilTemperature = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilTemperature");
-	private static MongoCollection<Document> soilPH = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilPH");
+	private static MongoCollection<Document> soilPH = mongoDBUtil.getMongoCollection(meiyaClient,"jh_strawberry","soilPH");*/
 	/**
 	 * 获取设备状态
 	 * @param id
@@ -114,47 +117,25 @@ public class DeviceService {
 	 * @param id
 	 * @return
 	 */
-	public JSONObject getLatestData(String id) {
+	public JSONObject getLatestData(String id){
 		logger.debug("进入获取最新数据");
 		JSONObject object = new JSONObject();
-		Sort sort = new Sort("time");
-		BasicDBObject query = new BasicDBObject();
-        query.put("deviceid",id);
-        //空气湿度
-		FindIterable<Document> documents1 = airHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents1) {
-			object.put(Constants.AIRHUMIDITY, d.get("value"));
-		}
-		//空气温度
-		FindIterable<Document> documents2 = airTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents2) {
-			object.put(Constants.AIRTEMPERATURE, d.get("value"));
-		}
-		//二氧化碳浓度
-		FindIterable<Document> documents3 = co2.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents3) {
-			object.put(Constants.CO2, d.get("value"));
-		}
-		//光照强度
-		FindIterable<Document> documents4 = illuminance.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents4) {
-			object.put(Constants.ILLUMINANCE, d.get("value"));
-		}
-		//土壤湿度
-		FindIterable<Document> documents5 = soilHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents5) {
-			object.put(Constants.SOILHUMIDITY, d.get("value"));
-		}
-		//土壤温度
-		FindIterable<Document> documents6 = soilTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents6) {
-			object.put(Constants.SOILTEMPERATURE, d.get("value"));
-		}
-		//土壤酸碱值
-		FindIterable<Document> documents7 = soilPH.find(query).sort(new  BasicDBObject("time",-1)).limit(1);
-		for (Document d : documents7) {
-			object.put(Constants.SOILPH, d.get("value"));
-		}
+		Pageable pageable = new PageRequest(0, 1, Sort.Direction.DESC,"time");
+		Page<AirHumidity> airHumidityPage = airHumidityRepository.findByDeviceid(id, pageable);
+		Page<AirTemperature> airTemperaturePage = airTemperatureRepository.findByDeviceid(id,pageable);
+		Page<co2> co2Page =co2Repository.findByDeviceid(id,pageable);
+		Page<Illuminance> illuminancePage =illuminanceRepository.findByDeviceid(id,pageable);
+		Page<SoilHumidity> soilHumidityPage =soilHumidityRepository.findByDeviceid(id,pageable);
+		Page<SoilTemperature> soilTemperaturePage =soilTemperatureRepository.findByDeviceid(id,pageable);
+		Page<SoilPH> soilPHPage =soilPHRepository.findByDeviceid(id,pageable);
+		object.put(Constants.AIRHUMIDITY, airHumidityPage.getContent().get(0).getValue());
+		object.put(Constants.AIRTEMPERATURE, airTemperaturePage.getContent().get(0).getValue());
+		object.put(Constants.CO2, co2Page.getContent().get(0).getValue());
+		object.put(Constants.ILLUMINANCE, illuminancePage.getContent().get(0).getValue());
+		object.put(Constants.SOILHUMIDITY, soilHumidityPage.getContent().get(0).getValue());
+		object.put(Constants.SOILTEMPERATURE, soilTemperaturePage.getContent().get(0).getValue());
+		object.put(Constants.SOILPH, soilPHPage.getContent().get(0).getValue());
+		System.out.println(object);
 		return RESCODE.SUCCESS.getJSONRES(object);
 	}
 	/**
@@ -184,90 +165,98 @@ public class DeviceService {
 		JSONArray data = new JSONArray();
 		JSONArray time = new JSONArray();
 		BasicDBObject query = new BasicDBObject();
-        query.put("deviceid",id);	
+        query.put("deviceid",id);
         double value = 0;
         int count = 0;
+		Pageable pageable = new PageRequest(0, data_points, Sort.Direction.DESC,"time");
 		switch (type) {
-		case Constants.AIRTEMPERATURE:			
+		case Constants.AIRTEMPERATURE:
 			//空气温度
-			FindIterable<Document> documents2 = airTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents2) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<AirTemperature> airTemperaturePage = airTemperatureRepository.findByDeviceid(id,pageable);
+			List<AirTemperature> airTemperatureList = airTemperaturePage.getContent();
+			for (AirTemperature d : airTemperatureList) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
-				time.add(sdfd.format(date));			
+				time.add(sdfd.format(date));
 			}
 			break;
 		case Constants.AIRHUMIDITY:
 			//空气湿度
-			FindIterable<Document> documents1 = airHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents1) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<AirHumidity> airHumidityPage = airHumidityRepository.findByDeviceid(id, pageable);
+			List<AirHumidity> airHumidityList = airHumidityPage.getContent();
+			for (AirHumidity d : airHumidityList) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
 		case Constants.ILLUMINANCE:
 			//光照强度
-			FindIterable<Document> documents4 = illuminance.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents4) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<Illuminance> illuminancePage =illuminanceRepository.findByDeviceid(id,pageable);
+			List<Illuminance> illuminanceList = illuminancePage.getContent();
+			for (Illuminance d : illuminanceList) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
 		case Constants.CO2:
 			//二氧化碳浓度
-			FindIterable<Document> documents3 = co2.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents3) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<co2> co2Page =co2Repository.findByDeviceid(id,pageable);
+			List<co2> co2List = co2Page.getContent();
+			for (co2 d : co2List) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
 		case Constants.SOILHUMIDITY:
 			//土壤湿度
-			FindIterable<Document> documents5 = soilHumidity.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents5) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<SoilHumidity> soilHumidityPage =soilHumidityRepository.findByDeviceid(id,pageable);
+			List<SoilHumidity> soilHumidityList = soilHumidityPage.getContent();
+			for (SoilHumidity d : soilHumidityList) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
 		case Constants.SOILTEMPERATURE:
 			//土壤温度
-			FindIterable<Document> documents6 = soilTemperature.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents6) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<SoilTemperature> soilTemperaturePage =soilTemperatureRepository.findByDeviceid(id,pageable);
+			List<SoilTemperature> soilTemperatureList = soilTemperaturePage.getContent();
+			for (SoilTemperature d : soilTemperatureList) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
 		case Constants.SOILPH:
 			//土壤酸碱值
-			FindIterable<Document> documents7 = soilPH.find(query).sort(new  BasicDBObject("time",-1)).limit(data_points);
-			for (Document d : documents7) {
-				Date date = d.getDate("time");
-				data.add(d.get("value"));
-				value+=(double)d.get("value");
+			Page<SoilPH> soilPHPage =soilPHRepository.findByDeviceid(id,pageable);
+			List<SoilPH> soilPHList = soilPHPage.getContent();
+			for (SoilPH d : soilPHList) {
+				Date date = d.getTime();
+				data.add(d.getValue());
+				value+=(double)d.getValue();
 				count++;
 				time.add(sdfd.format(date));
 			}
 			break;
 		default:
 			break;
-		
+
 		}
 		Collections.reverse(data);
 		Collections.reverse(time);
@@ -278,7 +267,7 @@ public class DeviceService {
 			jsonObject.put("mean", 0);
 		}else {
 			jsonObject.put("mean", (double)Math.round(value/count*100)/100);
-		}		
+		}
 		return RESCODE.SUCCESS.getJSONRES(jsonObject);
 	}
 	/**
@@ -315,20 +304,21 @@ public class DeviceService {
 		Map<String, Object> map = null;
 		if(response.errno==0) {
 			List<DatastreamsItem> dl= response.getData().getDevices();
-			logger.debug("参数个数："+dl.size());		
+			logger.debug("参数个数："+dl.size());
 			logger.debug("总共获得数据量为："+response.getData().getCount());
-			for(int i=0;i<dl.size();i++) {				
+			for(int i=0;i<dl.size();i++) {
 				DatastreamsItem di = dl.get(i);
 				List<DatapointsItem> ld =di.getDatapoints();
 				logger.debug(di.getId()+"参数下数据量："+ld.size());
 				switch (di.getId()) {
-				case Constants.AIRTEMPERATURE:			
+				case Constants.AIRTEMPERATURE:
 					//空气温度
 					for(int j=0;j<ld.size();j++) {
 						AirTemperature airTemperature = new AirTemperature();
 						airTemperature.setDeviceid(id);
 						airTemperature.setTime(sdf.parse(ld.get(j).getAt()));
 						airTemperature.setValue(Double.parseDouble((String)ld.get(j).getValue()));
+
 						airTemperatureRepository.save(airTemperature);
 					}
 					break;
@@ -394,7 +384,7 @@ public class DeviceService {
 					break;
 				default:
 					break;
-				}				
+				}
 			}
 			logger.debug("数据存储结束！");
 		}

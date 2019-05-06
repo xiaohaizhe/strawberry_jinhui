@@ -21,13 +21,20 @@ import com.jh.strawberry.service.DeviceService;
 public class DeviceController {
 	@Autowired
 	private DeviceService deviceService;
-	@Autowired 
-	private DeviceRepository deviceRepository;
+
+	@RequestMapping(value = "test",method = RequestMethod.GET)
+	public JSONObject test() {
+		System.out.println("进入测试");
+		JSONObject object = new JSONObject();
+		object.put("data","test");
+		return object;
+	}
 	
 	@RequestMapping(value = "get_latest_data",method = RequestMethod.GET)
 	public JSONObject getLatestData(String id) {
 		return deviceService.getLatestData(id);
 	}
+
 	@RequestMapping(value = "get_data_in_chart",method = RequestMethod.GET)
 	public JSONObject getDataInChart(String id,String type) {
 		return deviceService.getDataInChart(id, type);
@@ -37,7 +44,7 @@ public class DeviceController {
 	public void update(String id) {
 		Date end = new Date();
 		Date start = new Date();
-		start.setDate(start.getDate()-3);
+		start.setDate(start.getDate()-2);
 		try {
 			deviceService.updateData(id, start, end);
 		} catch (ParseException e) {
@@ -45,5 +52,6 @@ public class DeviceController {
 			e.printStackTrace();
 		}
 	}
+
 }
 
